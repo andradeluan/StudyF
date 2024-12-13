@@ -1,0 +1,204 @@
+{% load static %}
+{% load allauth account %}
+{% load allauth i18n %}
+
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <title>Fast Study</title>
+  <style>
+    .add-card-btn {
+      border: 2px dashed #6c757d;
+      /* Borda tracejada */
+      border-radius: 15px;
+      /* Bordas arredondadas */
+      background-color: #f8f9fa;
+      /* Fundo claro */
+      transition: all 0.3s ease;
+    }
+    .cursor-p{
+      cursor: pointer;
+    }
+    .add-card-btn:hover {
+      background-color: #e9ecef;
+      /* Fundo ao passar o mouse */
+      border-color: #343a40;
+      /* Cor da borda ao passar o mouse */
+    }
+
+    .add-card-icon {
+      font-size: 3rem;
+      color: #6c757d;
+    }
+    .color-gradient {
+      background: var(--gra, linear-gradient(204deg, #FF0 3.26%, #43D9E3 86.96%));
+      box-shadow: 2px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    }
+  </style>
+  <meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+
+<body>
+  <header style="background: #081B13; ">
+    <nav class="navbar container d-flex justify-content-between">
+      <div class="">
+        <a class="navbar-brand " href="">
+          <img src="{% static '/assets/LOGO.png'%}" alt="Fast Study" width="64" height="28">
+        </a>
+      </div>
+      <div class="d-flex gap-4">
+        <div class="text-white ">{{ username }}</div>
+        <div>{% url 'account_logout' as action_url %}
+          {% element form method="post" action=action_url no_visible_fields=True %}
+          {% slot body %}
+          {% csrf_token %}
+          {{ redirect_field }}
+          {% endslot %}
+          {% slot actions %}
+          {% element button type="submit" %}
+          {% trans 'Sign Out' %}
+          {% endelement %}
+          {% endslot %}
+          {% endelement %}</div>
+      </div>
+    </nav>
+  </header>
+  <main>
+    <div class="container mt-5">
+      <h1 class="text-center mb-4">Study Space</h1>
+      <div class="row row-cols-1 row-cols-md-3 g-4" id="card-gallery">
+        <!-- Botão para criar novo card -->
+        <div class="col">
+          <div class="add-card-btn d-flex align-items-center justify-content-center h-100 cursor-p" data-bs-toggle="modal" data-bs-target="#createCardModal">
+            <span class="add-card-icon pb-2">+</span>
+          </div>
+        </div>
+        {% for card in cards %}
+        <div class="col">
+          <div class="card h-100 cursor-p" onclick="redirectToCard('{{ card.id_video }}')">
+            <div class="card-header d-flex justify-content-between align-items-center cursor-pointer">
+              <h5 class="mb-0">{{ card.titulo }}</h5>
+              <button type="button" class="btn-close" aria-label="Close" data-bs-toggle="modal"
+                data-bs-target="#confirmDeleteModal-{{ card.id_video }}" onclick="stopRedirect(event)">
+              </button>
+            </div>
+            <div class="card-body">
+              <p>{{ card.resumo|truncatewords:15 }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal de Confirmação de Exclusão -->
+        <div class="modal fade" id="confirmDeleteModal-{{ card.id_video }}" tabindex="-1"
+          aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Realmente quer excluir?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body text-center">
+                <button type="button" class="btn btn-danger me-2"
+                  onclick="deleteCard('{{ card.id_video }}')">EXCLUIR</button>
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">CANCELAR</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <!-- Modal criar card -->
+    <div class="modal fade" id="createCardModal" tabindex="-1" aria-labelledby="createCardModalLabel"
+      aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="createCardModalLabel">O que você está querendo aprender?</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+
+            <form action="{% url 'create_card'%}" method="post">
+              {% csrf_token %}
+              <!-- Input para URL do YouTube -->
+              <div class="mb-3">
+                <label for="titleUrl" class="form-label">Titúlo:</label>
+                <input type="text" class="form-control" id="titleUrl" name="titleUrl" placeholder="" required>
+              </div>
+              <div class="mb-3">
+                <label for="youtubeUrl" class="form-label">URL do vídeo do YouTube:</label>
+                <input type="url" class="form-control" id="youtubeUrl" name="youtubeUrl"
+                  placeholder="https://www.youtube.com/watch?v=..." required>
+              </div>
+              <!-- Input para idioma -->
+              <div class="mb-3">
+                <label class="form-label">Idioma do vídeo:</label>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="videoLanguage" id="languagePt" value="pt" checked>
+                  <label class="form-check-label" for="languagePt">Português</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="videoLanguage" id="languageEn" value="en">
+                  <label class="form-check-label" for="languageEn">Inglês</label>
+                </div>
+              </div>
+              <!-- Botão para criar o card -->
+              <div class="text-center">
+                <button type="submit" class="btn color-gradient text-black">
+                  APRENDER
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- fim do Modal criar card -->
+  </main>
+  <script>
+    function redirectToCard(id_video) {
+      // Redireciona para a URL 'card' com o id_video correspondente
+      window.location.href = "{% url 'card' 'placeholder' %}".replace('placeholder', id_video);
+    }
+
+    function stopRedirect(event) {
+      // Impede que o evento de clique na card seja propagado
+      event.stopPropagation();
+    }
+
+
+    // Captura o token CSRF da meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Função de exclusão do card
+    function deleteCard(cardId) {
+      fetch(`/studyspace/delete-card/${cardId}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken, // Adiciona o token CSRF no cabeçalho
+        },
+      })
+        .then(response => {
+          if (response.ok) {
+            location.reload(); // Atualiza a página após exclusão
+          } else {
+            return response.json().then(data => alert(data.message || 'Erro ao excluir o card!'));
+          }
+        })
+        .catch(error => console.error('Erro na requisição:', error));
+    }
+
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"></script>
+</body>
+
+</html>

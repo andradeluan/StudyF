@@ -1,0 +1,113 @@
+{% load static %}
+{% load allauth account %}
+{% load allauth i18n %}
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <title>Fast Study</title>
+  <style>
+    .color-gradient {
+      background: var(--gra, linear-gradient(204deg, #FF0 3.26%, #43D9E3 86.96%));
+      box-shadow: 2px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-header {
+      background-color: #007bff;
+      color: white;
+      text-align: center;
+    }
+
+    .flashcard {
+      color: black;
+      padding: 1rem;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .flashcard:hover {
+      background: linear-gradient(45deg, #2980b9, #6dd5fa);
+    }
+  </style>
+  <meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+
+<body>
+  <header style="background: #081B13; ">
+    <nav class="navbar container d-flex justify-content-between">
+      <div class="">
+        <a class="navbar-brand " href="">
+          <img src="{% static '/assets/LOGO.png'%}" alt="Fast Study" width="64" height="28">
+        </a>
+      </div>
+      <div class="d-flex gap-4">
+        <div class="text-white ">{{ username }}</div>
+        <div>{% url 'account_logout' as action_url %}
+          {% element form method="post" action=action_url no_visible_fields=True %}
+          {% slot body %}
+          {% csrf_token %}
+          {{ redirect_field }}
+          {% endslot %}
+          {% slot actions %}
+          {% element button type="submit" %}
+          {% trans 'Sign Out' %}
+          {% endelement %}
+          {% endslot %}
+          {% endelement %}</div>
+      </div>
+    </nav>
+  </header>
+  <main>
+    <div class="container mt-5">
+      <div class="card shadow">
+        <div class="card-header ">
+          <h3>{{ titulo }}</h3>
+          <a href="{% url 'studyspace' %}" class="btn-close position-absolute top-0 end-0 m-3" aria-label="Close"></a>
+        </div>
+        <div class="card-body">
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h5 class="text-center">Resumo</h5>
+              <p id="resumo">{{ resumo }}</p>
+            </div>
+            <div class="col-md-6">
+              <h5 class="text-center">Roteiro de Estudos</h5>
+              <p id="roteiro-estudos">{{ roteiro_estudos }}</p>
+            </div>
+          </div>
+          <h5 class="text-center">Flashcards</h5>
+          <div class="row" id="flashcards">
+            {% for flashcard in flashcards %}
+            <div class="col-md-4 mb-3 ">
+              <div class="flashcard color-gradient" onclick="toggleAnswer(this)">
+                <p><strong>{{ flashcard.question }}</strong></p>
+                <p class="flashcard-answer" style="display: none;">{{ flashcard.answer }}</p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Função para exibir ou ocultar a resposta
+      function toggleAnswer(flashcardElement) {
+        const answerElement = flashcardElement.querySelector('.flashcard-answer');
+        if (answerElement.style.display === 'none') {
+          answerElement.style.display = 'block'; // Exibe a resposta
+        } else {
+          answerElement.style.display = 'none'; // Oculta a resposta
+        }
+      }
+    </script>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"></script>
+</body>
+
+</html>
